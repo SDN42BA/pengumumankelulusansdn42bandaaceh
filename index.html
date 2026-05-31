@@ -146,8 +146,7 @@ function prosesCek() {
   var errMsg = document.getElementById('pesan-error');
 
   if (!nisn || !tglLahir) {
-    errMsg.innerText = "Mohon isi semua kolom terlebih dahulu!";
-    errMsg.classList.remove('hidden');
+    alert("Peringatan: NISN atau Tanggal Lahir belum diisi!");
     return;
   }
   
@@ -155,30 +154,33 @@ function prosesCek() {
   btn.disabled = true;
   btn.innerText = "Memproses...";
 
-  // LAKUKAN INI: Ganti teks di bawah dengan URL Web App yang kamu salin di langkah sebelumnya
+  // Taruh URL Web App Google Script Anda di bawah ini
   var urlWebApps = "https://script.google.com/macros/s/AKfycbyy8f7m-GU8aNVnsddoNtVDHY2B1G3OJrJe-FcSJr_BSY_HB1R_H8F9Gqdq-9xWlQq1ag/exec"; 
   
-  // Menggabungkan parameter input ke URL
   var urlLengkap = urlWebApps + "?nisn=" + encodeURIComponent(nisn) + "&tgl_lahir=" + encodeURIComponent(tglLahir);
 
-  // Mengambil data secara universal (kebal terhadap masalah banyak email di HP)
+  alert("Mencoba menyambung ke: " + urlLengkap);
+
   fetch(urlLengkap)
-    .then(response => response.json())
+    .then(response => {
+      alert("Respons diterima dari Google! Status: " + response.status);
+      return response.json();
+    })
     .then(hasilData => {
       btn.disabled = false;
       btn.innerText = "Periksa Kelulusan";
+      
+      alert("Isi Data dari Google Sheets: " + JSON.stringify(hasilData));
 
       if (hasilData.status === "tidak_ditemukan" || hasilData.status === "error") {
         errMsg.innerText = "Data NISN atau Tanggal Lahir salah / tidak ditemukan.";
         errMsg.classList.remove('hidden');
       } else {
-        // Mengisi data ke lembar hasil
         document.getElementById('res-nama').innerText = hasilData.nama;
         document.getElementById('res-nisn').innerText = hasilData.nisn;
         document.getElementById('res-ttl').innerText = hasilData.tempatLahir + ", " + hasilData.tglLahir;
         document.getElementById('res-nilai').innerText = hasilData.nilai;
 
-        // Cek Status Lulus / Tidak Lulus
         if (hasilData.hasil.toLowerCase() === "lulus") {
           document.getElementById('box-lulus').classList.remove('hidden');
           document.getElementById('box-tidak-lulus').classList.add('hidden');
@@ -188,7 +190,6 @@ function prosesCek() {
           document.getElementById('box-tidak-lulus').classList.remove('hidden');
         }
 
-        // Pindah Halaman
         document.getElementById('halaman-cek').classList.add('hidden');
         document.getElementById('halaman-hasil').classList.remove('hidden');
       }
@@ -196,9 +197,9 @@ function prosesCek() {
     .catch(error => {
       btn.disabled = false;
       btn.innerText = "Periksa Kelulusan";
-      errMsg.innerText = "Gagal terhubung ke server. Periksa koneksi internet Anda.";
+      alert("Koneksi Putus/Gagal! Pesan Error: " + error.message);
+      errMsg.innerText = "Gagal terhubung ke server.";
       errMsg.classList.remove('hidden');
-      console.error("Error:", error);
     });
 }
 
