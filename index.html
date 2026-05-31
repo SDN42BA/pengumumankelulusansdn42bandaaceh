@@ -140,13 +140,13 @@
     }
 
 function prosesCek() {
-  var nisn = document.getElementById('nisn').value;
-  var tglLahir = document.getElementById('tgl_lahir').value;
+  var nisn = document.getElementById('nisn').value.trim();
+  var tglLahir = document.getElementById('tgl_lahir').value; // Format: YYYY-MM-DD
   var btn = document.getElementById('btn-submit');
   var errMsg = document.getElementById('pesan-error');
 
   if (!nisn || !tglLahir) {
-    alert("Peringatan: NISN atau Tanggal Lahir belum diisi!");
+    alert("Mohon isi semua kolom terlebih dahulu!");
     return;
   }
   
@@ -154,34 +154,75 @@ function prosesCek() {
   btn.disabled = true;
   btn.innerText = "Memproses...";
 
-  // Taruh URL Web App Google Script Anda di bawah ini
-  var urlWebApps = "https://script.google.com/macros/s/AKfycbyy8f7m-GU8aNVnsddoNtVDHY2B1G3OJrJe-FcSJr_BSY_HB1R_H8F9Gqdq-9xWlQq1ag/exec"; 
+  // 1. MASUKKAN ID SPREADSHEET KAMU DI SINI
+  var idSheet = "1i6ct9EbiV7-Sf6KjzXBl_dgvsLql48JJiAQfJoqyq_M"; 
   
-  var urlLengkap = urlWebApps + "?nisn=" + encodeURIComponent(nisn) + "&tgl_lahir=" + encodeURIComponent(tglLahir);
+  // URL API Publik resmi Google Sheets
+  var urlAPI = "https://docs.google.com/spreadsheets/d/" + idSheet + "/gviz/tq?tqx=out:json";
 
-  alert("Mencoba menyambung ke: " + urlLengkap);
+  fetch(urlAPI)
+    .then(response => response.text())
+    .then(dataTeks => {
+      // Membersihkan bungkus json dari Google gviz
+      var jsonMurni = JSON.parse(dataTeks.substr(47).slice(0, -2));
+      var barisData = jsonMurni.table.rows;
+      
+      var hasilData = null;
 
-  fetch(urlLengkap)
-    .then(response => {
-      alert("Respons diterima dari Google! Status: " + response.status);
-      return response.json();
-    })
-    .then(hasilData => {
+      // Format input tanggal ke "YYYY-MM-DD" agar cocok dengan deteksi sistem
+      var dTarget = new Date(tglLahir);
+      var formatInputTgl = dTarget.getFullYear() + "-" + 
+                           ("0" + (dTarget.getMonth() + 1)).slice(-2) + "-" + 
+                           ("0" + dTarget.getDate()).slice(-2);
+
+      // Looping mencari data dari baris pertama (index 0 di gviz)
+      for (var i = 0; i < barisData.length; i++) {
+        var cells = barisData[i].c;
+        if (!cells || !cells[1]) continue; // Skip jika kolom NISN kosong
+
+        var sheetNisn = cells[1].v ? cells[1].v.toString().trim() : "";
+        
+        // Deteksi & normalisasi tanggal lahir dari Excel/Sheets
+        var sheetTglRaw = cells[3] ? cells[3].f || cells[3].v : "";
+        var formatSheetTgl = "";
+
+        if (cells[3] && cells[3].v && cells[3].v.toString().includes("Date")) {
+          // Jika tipenya format Date bawaan Google
+          var tglObj = eval("new " + cells[3].v);
+          formatSheetTgl = tglObj.getFullYear() + "-" + 
+                           ("0" + (tglObj.getMonth() + 1)).slice(-2) + "-" + 
+                           ("0" + tglObj.getDate()).slice(-2);
+        } else {
+          // Jika tipenya teks string biasa
+          formatSheetTgl = sheetTglRaw.toString().trim();
+        }
+
+        // COCOKKAN NISN & TANGGAL LAHIR
+        if (sheetNisn === nisn && (formatSheetTgl === formatInputTgl || sheetTglRaw.includes(tglLahir))) {
+          hasilData = {
+            nama: cells[0] ? cells[0].v : "",
+            nisn: sheetNisn,
+            tempatLahir: cells[2] ? cells[2].v : "",
+            tglLahir: sheetTglRaw, // Tampilan tanggal asli dari Excel
+            nilai: cells[4] ? cells[4].v : "",
+            hasil: cells[5] ? cells[5].v : ""
+          };
+          break;
+        }
+      }
+
       btn.disabled = false;
       btn.innerText = "Periksa Kelulusan";
-      
-      alert("Isi Data dari Google Sheets: " + JSON.stringify(hasilData));
 
-      if (hasilData.status === "tidak_ditemukan" || hasilData.status === "error") {
-        errMsg.innerText = "Data NISN atau Tanggal Lahir salah / tidak ditemukan.";
-        errMsg.classList.remove('hidden');
-      } else {
+      if (hasilData) {
+        // Isi data ke halaman hasil
         document.getElementById('res-nama').innerText = hasilData.nama;
         document.getElementById('res-nisn').innerText = hasilData.nisn;
         document.getElementById('res-ttl').innerText = hasilData.tempatLahir + ", " + hasilData.tglLahir;
         document.getElementById('res-nilai').innerText = hasilData.nilai;
 
-        if (hasilData.hasil.toLowerCase() === "lulus") {
+        // Cek Status Lulus
+        if (hasilData.hasil.toLowerCase().includes("lulus") && !hasilData.hasil.toLowerCase().includes("tidak")) {
           document.getElementById('box-lulus').classList.remove('hidden');
           document.getElementById('box-tidak-lulus').classList.add('hidden');
           luncurkanKembangApi(); 
@@ -192,14 +233,17 @@ function prosesCek() {
 
         document.getElementById('halaman-cek').classList.add('hidden');
         document.getElementById('halaman-hasil').classList.remove('hidden');
+      } else {
+        errMsg.innerText = "Data NISN atau Tanggal Lahir salah atau tidak ditemukan.";
+        errMsg.classList.remove('hidden');
       }
     })
     .catch(error => {
       btn.disabled = false;
       btn.innerText = "Periksa Kelulusan";
-      alert("Koneksi Putus/Gagal! Pesan Error: " + error.message);
-      errMsg.innerText = "Gagal terhubung ke server.";
+      errMsg.innerText = "Gagal memuat data dari database Google. Coba lagi.";
       errMsg.classList.remove('hidden');
+      console.error(error);
     });
 }
 
