@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelulusan SDN 42 Banda Aceh</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    .bg-merah-gradasi {
+      background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex items-center justify-center p-4 sm:p-6 select-none">
+
+  <div id="halaman-cek" class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 transform border-b-4 border-red-600">
+    <div class="bg-merah-gradasi p-5 sm:p-6 text-center text-white relative">
+      <span class="inline-block bg-white text-red-700 text-[10px] sm:text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest shadow mb-2">PENGUMUMAN KELULUSAN</span>
+      <h2 class="text-lg sm:text-xl font-bold tracking-wide leading-tight">SD NEGERI 42 BANDA ACEH</h2>
+      <p class="text-[11px] sm:text-xs text-red-200 mt-1">Tahun Ajaran 2025-2026</p>
+    </div>
+    
+    <div class="flex justify-center mt-6">
+      <div class="w-24 h-24 sm:w-32 sm:h-32 bg-red-50 rounded-full flex items-center justify-center border-4 border-red-500 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-16 sm:w-16 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="p-5 sm:p-6 space-y-4">
+      <h3 class="text-center font-semibold text-gray-700 text-base sm:text-lg">Cek Status Kelulusan Anda</h3>
+      
+      <div>
+        <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">NISN Siswa</label>
+        <input type="number" id="nisn" placeholder="Masukkan 10 digit NISN" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition">
+      </div>
+
+      <div>
+        <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Tanggal Lahir</label>
+        <input type="date" id="tgl_lahir" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition">
+      </div>
+
+      <button onclick="prosesCek()" id="btn-submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 text-sm sm:text-base rounded-lg shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 mt-2 cursor-pointer">
+        <span id="text-tombol">Periksa Kelulusan</span>
+      </button>
+      
+      <div id="pesan-error" class="text-center text-xs sm:text-sm text-red-600 font-medium hidden"></div>
+    </div>
+  </div>
+
+  <div id="halaman-hasil" class="max-w-xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 transform hidden border-t-8 border-red-600">
+    <div class="bg-merah-gradasi text-white p-5 sm:p-6 text-center relative">
+      <span class="inline-block bg-white text-red-700 text-[10px] sm:text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest shadow mb-2">PENGUMUMAN KELULUSAN</span>
+      <h2 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">SD NEGERI 42 BANDA ACEH</h2>
+      <p class="text-xs opacity-90 mt-1">Tahun Ajaran 2025-2026</p>
+    </div>
+
+    <div class="p-5 sm:p-8 space-y-6">
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div class="flex flex-col space-y-3 sm:space-y-0 sm:table w-full text-xs sm:text-sm text-gray-700">
+          <div class="sm:table-row">
+            <div class="font-medium py-0.5 sm:py-1.5 sm:table-cell sm:w-1/3 text-gray-500 sm:text-gray-700">Nama Lengkap</div>
+            <div class="py-0.5 sm:py-1.5 sm:table-cell font-bold text-gray-900"><span class="hidden sm:inline">: </span><span id="res-nama"></span></div>
+          </div>
+          <div class="sm:table-row">
+            <div class="font-medium py-0.5 sm:py-1.5 sm:table-cell text-gray-500 sm:text-gray-700">NISN</div>
+            <div class="py-0.5 sm:py-1.5 sm:table-cell text-gray-900"><span class="hidden sm:inline">: </span><span id="res-nisn"></span></div>
+          </div>
+          <div class="sm:table-row">
+            <div class="font-medium py-0.5 sm:py-1.5 sm:table-cell text-gray-500 sm:text-gray-700">Tempat, Tanggal Lahir</div>
+            <div class="py-0.5 sm:py-1.5 sm:table-cell text-gray-900"><span class="hidden sm:inline">: </span><span id="res-ttl"></span></div>
+          </div>
+          <div class="sm:table-row">
+            <div class="font-medium py-0.5 sm:py-1.5 sm:table-cell text-gray-500 sm:text-gray-700">Nilai Rata-Rata</div>
+            <div class="py-0.5 sm:py-1.5 sm:table-cell font-bold text-gray-800"><span class="hidden sm:inline">: </span><span id="res-nilai"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="box-lulus" class="hidden text-center space-y-4">
+        <div class="inline-block bg-green-100 text-green-700 font-extrabold text-lg sm:text-2xl px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border-2 border-green-500 shadow-sm">
+          DINYATAKAN: LULUS
+        </div>
+        <blockquote class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl my-4 text-left">
+          <p class="italic text-gray-700 text-xs sm:text-sm leading-relaxed font-medium">
+            "Selamat atas kelulusanmu! Ini bukan akhir dari perjalanan, tapi awal dari petualangan yang lebih besar."
+          </p>
+        </blockquote>
+        <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-left text-xs sm:text-sm text-yellow-800 flex items-start sm:items-center gap-3">
+          <p class="leading-relaxed">
+            <strong>Informasi Penting:</strong> Silahkan datang pada <span class="font-bold underline">Rabu, 3 Juni 2026</span> untuk mengambil SKL.
+          </p>
+        </div>
+      </div>
+
+      <div id="box-tidak-lulus" class="hidden text-center space-y-4">
+        <div class="inline-block bg-red-100 text-red-700 font-extrabold text-lg sm:text-2xl px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border-2 border-red-500 shadow-sm">
+          DINYATAKAN: TIDAK LULUS
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-gray-100">
+        <button onclick="kembaliKeCek()" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2.5 rounded-lg text-center text-xs sm:text-sm">
+          Kembali ke Pencarian
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function luncurkanKembangApi() {
+      var duration = 4 * 1000;
+      var end = Date.now() + duration;
+      (function frame() {
+        confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.8 } });
+        confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.8 } });
+        if (Date.now() < end) { requestAnimationFrame(frame); }
+      }());
+    }
+
+    function prosesCek() {
+      var nisn = document.getElementById('nisn').value;
+      var tglLahir = document.getElementById('tgl_lahir').value;
+      var btn = document.getElementById('btn-submit');
+      var txtBtn = document.getElementById('text-tombol');
+      var errMsg = document.getElementById('pesan-error');
+
+      if (!nisn || !tglLahir) {
+        errMsg.innerText = "Mohon isi semua kolom terlebih dahulu!";
+        errMsg.classList.remove('hidden');
+        return;
+      }
+      
+      errMsg.classList.add('hidden');
+      btn.disabled = true;
+      txtBtn.innerText = "Memproses...";
+
+      // Taruh URL Web App Google Script Anda di bawah ini
+      var urlAPI ="https://script.google.com/macros/s/AKfycbwp8KvXcnA9qE1iU796218IRuwtyIq_KtaqUVtqLaqa2D1hphHM8vcc43fGcI9T00C-QA/exec"; 
+      
+      var urlPenuh = urlAPI + "?nisn=" + encodeURIComponent(nisn) + "&tgl_lahir=" + encodeURIComponent(tglLahir);
+
+      // Menggunakan fetch (Kompatibel penuh dengan Android, iOS Safari, Chrome, dll)
+      fetch(urlPenuh)
+        .then(response => response.json())
+        .then(hasilData => {
+          btn.disabled = false;
+          txtBtn.innerText = "Periksa Kelulusan";
+
+          if (hasilData.status === "tidak_ditemukan" || hasilData.status === "error") {
+            errMsg.innerText = "Data NISN atau Tanggal Lahir salah / tidak ditemukan.";
+            errMsg.classList.remove('hidden');
+          } else {
+            document.getElementById('res-nama').innerText = hasilData.nama;
+            document.getElementById('res-nisn').innerText = hasilData.nisn;
+            document.getElementById('res-ttl').innerText = hasilData.tempatLahir + ", " + hasilData.tglLahir;
+            document.getElementById('res-nilai').innerText = hasilData.nilai;
+
+            if (hasilData.hasil.toLowerCase() === "lulus") {
+              document.getElementById('box-lulus').classList.remove('hidden');
+              document.getElementById('box-tidak-lulus').classList.add('hidden');
+              luncurkanKembangApi();
+            } else {
+              document.getElementById('box-lulus').classList.add('hidden');
+              document.getElementById('box-tidak-lulus').classList.remove('hidden');
+            }
+
+            document.getElementById('halaman-cek').classList.add('hidden');
+            document.getElementById('halaman-hasil').classList.remove('hidden');
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          txtBtn.innerText = "Periksa Kelulusan";
+          errMsg.innerText = "Terjadi gangguan jaringan. Coba lagi.";
+          errMsg.classList.remove('hidden');
+          console.error(err);
+        });
+    }
+
+    function kembaliKeCek() {
+      document.getElementById('halaman-hasil').classList.add('hidden');
+      document.getElementById('halaman-cek').classList.remove('hidden');
+      document.getElementById('nisn').value = "";
+      document.getElementById('tgl_lahir').value = "";
+    }
+  </script>
+</body>
+</html>
